@@ -1,7 +1,12 @@
-import { Render } from '../components/com_draw';
-import { FpsCounter } from '../components/com_fps';
+import { Position } from '../components/Position';
 import { Entity } from '../core/Entity';
+import { TextTile } from '../components/TextTile';
+import { FpsCounter } from '../components/FpsCounter';
+import { Draw } from '../components/Draw';
 
-export const fps = new Entity()
-  .with(new FpsCounter())
-  .with(new Render('', 5, 18, 'yellow', '18px monospace'));
+export const fpsCounter = new Entity().with(
+  Position(5, 20),
+  TextTile('', '16px monospace'),
+  FpsCounter(),
+  Draw(15, 15, 'yellow')
+);

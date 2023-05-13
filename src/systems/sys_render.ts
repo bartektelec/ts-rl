@@ -1,18 +1,21 @@
-import { Render } from '../components/com_draw';
-import { Entity } from '../core/Entity';
+import { Draw } from '../components/Draw';
+import { Position } from '../components/Position';
+import { TextTile } from '../components/TextTile';
+import { Game } from '../core/Game';
 
-export const sys_render = (
-  entities: Entity[],
-  ctx: CanvasRenderingContext2D
-) => {
+export const sys_render = (game: Game) => {
+  const entities = game.query(Draw, Position);
+
   for (const entity of entities) {
-    if (entity.has('draw')) {
-      const com = entity.uses.get('draw') as Render;
+    const draw = entity.get(Draw)!;
+    const position = entity.get(Position)!;
 
-      ctx.fillStyle = 'white';
-      ctx.font = com.font;
-      ctx.fillStyle = com.style;
-      ctx.fillText(com.text, com.x, com.y);
-    }
+    const text = entity.get(TextTile)!;
+    console.log('in render', text, position, draw);
+
+    game.ctx.fillStyle = draw.data.fillStyle;
+    game.ctx.font = text.data.font;
+
+    game.ctx.fillText(text.data.text, position.data.x, position.data.y);
   }
 };

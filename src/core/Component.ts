@@ -1,5 +1,7 @@
-export interface BaseComponent {
-  type: string;
-}
+export class Component<T> {
+  constructor(public label: string, public data: T) {}
 
-export type Component = BaseComponent;
+  is(x: Component<unknown>): x is Component<T> {
+    return x['label'] === this.label;
+  }
+}

@@ -1,4 +1,10 @@
+import { Draw } from '../components/Draw';
+import { Position } from '../components/Position';
+import { TextTile } from '../components/TextTile';
 import { Entity } from '../core/Entity';
-import { Render } from '../components/com_draw';
 
-export const player = new Entity().with(new Render('@', 0, 0));
+export const player = new Entity().with(
+  Position(0, 0),
+  Draw(10, 10, 'white'),
+  TextTile('@')
+);
