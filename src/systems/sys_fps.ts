@@ -21,7 +21,7 @@ export const sys_fps = (world: Game) => {
     const now = performance.now();
     target.fps.data.count++;
 
-    if (target.fps.data.last <= now - 1000) {
+    if (target.fps.data.last < now - 1000) {
       target.text.data.text = String(target.fps.data.count);
       target.fps.data.last = now;
       target.fps.data.count = 0;

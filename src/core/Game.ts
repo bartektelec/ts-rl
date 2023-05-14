@@ -1,6 +1,9 @@
 import { fpsCounter } from '../entities/FPS';
 import { player } from '../entities/Player';
+import { Wall } from '../entities/Wall';
+import { sys_collides } from '../systems/sys_collides';
 import { sys_fps } from '../systems/sys_fps';
+import { sys_keyboard_move } from '../systems/sys_keyboard_move';
 import { sys_render } from '../systems/sys_render';
 import { Component } from './Component';
 import { Config } from './Config';
@@ -14,6 +17,7 @@ export class Game {
 
   constructor(private canvas: HTMLCanvasElement) {
     this.config = new Config(640, 480, 60);
+
     this.canvas.width = this.config.width;
     this.canvas.height = this.config.height;
 
@@ -24,10 +28,11 @@ export class Game {
 
   init() {
     this.clear();
-    this.entities = [player, fpsCounter];
-    this.systems = [sys_render, sys_fps];
+    this.entities = [player, fpsCounter, Wall];
+    this.systems = [sys_collides, sys_keyboard_move];
 
     this.tick();
+    this.draw();
   }
 
   clear() {
@@ -46,15 +51,23 @@ export class Game {
   }
 
   tick() {
-    this.clear();
     for (const system of this.systems) {
       system(this);
     }
 
+    requestAnimationFrame(this.tick.bind(this));
+  }
+
+  draw() {
+    this.clear();
+
+    sys_render(this);
+    sys_fps(this);
+
     if (this.config.fps_cap) {
-      setTimeout(this.tick.bind(this), 1000 / this.config.fps_cap);
+      setTimeout(this.draw.bind(this), 1000 / this.config.fps_cap);
     } else {
-      requestAnimationFrame(this.tick.bind(this));
+      requestAnimationFrame(this.draw.bind(this));
     }
   }
 }

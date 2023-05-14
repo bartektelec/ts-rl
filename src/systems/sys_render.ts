@@ -11,7 +11,6 @@ export const sys_render = (game: Game) => {
     const position = entity.get(Position)!;
 
     const text = entity.get(TextTile)!;
-    console.log('in render', text, position, draw);
 
     game.ctx.fillStyle = draw.data.fillStyle;
     game.ctx.font = text.data.font;
