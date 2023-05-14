@@ -1,73 +1,75 @@
-import { fpsCounter } from '../entities/FPS';
-import { player } from '../entities/Player';
-import { Wall } from '../entities/Wall';
-import { sys_collides } from '../systems/sys_collides';
-import { sys_fps } from '../systems/sys_fps';
-import { sys_keyboard_move } from '../systems/sys_keyboard_move';
-import { sys_render } from '../systems/sys_render';
-import { Component } from './Component';
+import { Collide } from '../components/Collide';
 import { Config } from './Config';
 import { Entity } from './Entity';
+
+const MAX_ENTITIES = 10000;
+// const MAX_CHILDREN = 1000;
 
 export class Game {
   config: Config;
   ctx: CanvasRenderingContext2D;
-  entities: Entity[] = [];
-  systems: ((w: Game) => void)[] = [];
+
+  last_time = performance.now();
+
+  entities = new Int8Array(MAX_ENTITIES);
+  colliders: (Collide | null)[] = new Array(MAX_ENTITIES).fill(null);
+  labels: (string | null)[] = new Array(MAX_ENTITIES).fill(null);
+  controls = new Array(MAX_ENTITIES).fill(null);
+  movers = new Array(MAX_ENTITIES).fill(null);
+  draw = new Array(MAX_ENTITIES).fill(null);
+
+  events = {
+    quit: false,
+  };
 
   constructor(private canvas: HTMLCanvasElement) {
-    this.config = new Config(640, 480, 60);
+    this.config = new Config(640, 480, 0);
 
     this.canvas.width = this.config.width;
     this.canvas.height = this.config.height;
 
     this.ctx = this.canvas.getContext('2d')!;
 
-    this.init();
+    this.loop();
   }
 
-  init() {
-    this.clear();
-    this.entities = [player, fpsCounter, Wall];
-    this.systems = [sys_collides, sys_keyboard_move];
+  create_entity() {
+    const f = this.entities.indexOf(0);
 
-    this.tick();
-    this.draw();
+    if (f < 0) throw new Error('Entity list full');
+
+    return f;
   }
 
-  clear() {
-    this.ctx.fillStyle = 'black';
-    this.ctx.fillRect(0, 0, this.config.width, this.config.height);
-  }
+  add(blueprint: Entity) {
+    const entity = this.create_entity();
 
-  query<T extends (...args: any) => Component<unknown>>(...c: T[]): Entity[] {
-    const result = c
-      .map((component) =>
-        this.entities.filter((entity) => entity.has(component))
-      )
-      .flat();
-
-    return result;
-  }
-
-  tick() {
-    for (const system of this.systems) {
-      system(this);
+    for (const mixin of blueprint) {
+      mixin(this, entity);
     }
 
-    requestAnimationFrame(this.tick.bind(this));
+    return entity;
   }
 
-  draw() {
-    this.clear();
+  update(dt: number) {
+    sys_control_player(this, dt);
+    // sys_control_ui(this, dt);
+    // sys_control_mouse(this, dt);
+    sys_move(this, dt);
+    sys_collide(this, dt);
+    sys_draw2d(this, dt);
 
-    sys_render(this);
-    sys_fps(this);
+    sys_framerate(this, dt);
+  }
 
-    if (this.config.fps_cap) {
-      setTimeout(this.draw.bind(this), 1000 / this.config.fps_cap);
-    } else {
-      requestAnimationFrame(this.draw.bind(this));
-    }
+  loop() {
+    if (this.events.quit) return;
+    const now = performance.now();
+
+    this.update(now - this.last_time);
+
+    this.last_time = now;
+
+    requestAnimationFrame(this.loop.bind(this));
   }
 }
