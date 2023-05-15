@@ -1,8 +1,4 @@
-import { Collider } from '../components/Collider';
-import { FpsCounter } from '../components/FpsCounter';
-import { Move } from '../components/Move';
-import { Position } from '../components/Position';
-import { Game } from '../core/Game';
+import { Has } from '../components';
 
 const keydown: Record<string, boolean> = {};
 
@@ -14,25 +10,21 @@ document.addEventListener('keyup', (e) => {
   keydown[e.key] = false;
 });
 
-const MOVE_OFFSET = 0.5;
+const MOVE_OFFSET = 3;
 
-export const sys_keyboard_move = (game: Game) => {
-  const move_entities = game.query(Move, Position);
-  const fps = game.query(FpsCounter)[0]!.get(FpsCounter);
+const QUERY = Has.ControlPlayer | Has.Move;
 
-  for (const entity of move_entities) {
-    const position = entity.get(Position)!;
-    const controls = entity.get(Move)!;
-    const collider = entity.get(Collider);
-    if (!controls || !position) continue;
+export const sys_keyboard_move = (game: Game, _dt: number) => {
+  for (const entity in game.entities) {
+    if ((game.entities[entity] & QUERY) !== QUERY) continue;
 
-    if (keydown[controls.data.keys.up] && !collider?.data.top)
-      position.data.y -= MOVE_OFFSET;
-    if (keydown[controls.data.keys.down] && !collider?.data.bottom)
-      position.data.y += MOVE_OFFSET;
-    if (keydown[controls.data.keys.left] && !collider?.data.left)
-      position.data.x -= MOVE_OFFSET;
-    if (keydown[controls.data.keys.right] && !collider?.data.right)
-      position.data.x += MOVE_OFFSET;
+    const move = game.movers[entity]!;
+    const collider = game.colliders[entity];
+    const controls = game.settings.controls;
+
+    if (keydown[controls.up] && !collider?.top) move.vy -= MOVE_OFFSET;
+    if (keydown[controls.down] && !collider?.bottom) move.vy += MOVE_OFFSET;
+    if (keydown[controls.left] && !collider?.left) move.vx -= MOVE_OFFSET;
+    if (keydown[controls.right] && !collider?.right) move.vx += MOVE_OFFSET;
   }
 };

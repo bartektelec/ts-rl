@@ -1,14 +1,13 @@
-import { Collider } from '../components/Collider';
+import { Collide } from '../components/Collide';
 import { Draw } from '../components/Draw';
+import { Label } from '../components/Label';
 import { Move } from '../components/Move';
-import { Position } from '../components/Position';
-import { TextTile } from '../components/TextTile';
-import { Entity } from '../core/Entity';
+import { PlayerControl } from '../components/PlayerControl';
 
-export const player = new Entity().with(
-  Position(0, 0),
-  Draw(20, 20, 'white'),
+export const Player = [
+  Label('player'),
   Move(),
-  TextTile('@', '20px sans-serif'),
-  Collider(20, 20)
-);
+  Draw(20, 20, '@', 'white'),
+  Collide(20, 20),
+  PlayerControl(),
+];

@@ -1,57 +1,61 @@
-import { Collider } from '../components/Collider';
-import { Position } from '../components/Position';
+import { Has } from '../components';
+import type { Collide } from '../components/Collide';
+import { Draw } from '../components/Draw';
 import { Game } from '../core/Game';
 
 type CollidableEntity = {
-  pos: ReturnType<typeof Position>;
-  col: ReturnType<typeof Collider>;
+  draw: Draw;
+  col: Collide;
 };
 const collide_width = (a: CollidableEntity, b: CollidableEntity) =>
-  a.pos.data.x + a.col.data.width >= b.pos.data.x &&
-  a.pos.data.x <= b.pos.data.x + b.col.data.width;
+  a.draw.x + a.col.width >= b.draw.x && a.draw.x <= b.draw.x + b.col.width;
 
 const collide_height = (a: CollidableEntity, b: CollidableEntity) =>
-  a.pos.data.y + a.col.data.height >= b.pos.data.y &&
-  a.pos.data.y <= b.pos.data.y + b.col.data.height;
+  a.draw.y + a.col.height >= b.draw.y && a.draw.y <= b.draw.y + b.col.height;
 const collide_l = (a: CollidableEntity, b: CollidableEntity) =>
-  a.pos.data.x === b.pos.data.x + b.col.data.width && collide_height(a, b);
+  a.draw.x === b.draw.x + b.col.width && collide_height(a, b);
 const collide_r = (a: CollidableEntity, b: CollidableEntity) =>
-  a.pos.data.x + a.col.data.width === b.pos.data.x && collide_height(a, b);
+  a.draw.x + a.col.width === b.draw.x && collide_height(a, b);
 const collide_t = (a: CollidableEntity, b: CollidableEntity) =>
-  a.pos.data.y === b.pos.data.y + b.col.data.height && collide_width(a, b);
+  a.draw.y === b.draw.y + b.col.height && collide_width(a, b);
 
 const collide_b = (a: CollidableEntity, b: CollidableEntity) =>
-  a.pos.data.y + a.col.data.height === b.pos.data.y && collide_width(a, b);
+  a.draw.y + a.col.height === b.draw.y && collide_width(a, b);
 
-export const sys_collides = (game: Game) => {
-  const entites = game.query(Collider);
+const QUERY = Has.Collide | Has.Draw;
 
-  for (let a_ent of entites) {
-    const pos_a = a_ent.get(Position);
-    if (!pos_a) continue;
+export const sys_collides = (game: Game, _dt: number) => {
+  for (let a in game.entities) {
+    if ((game.entities[a] & QUERY) !== QUERY) continue;
 
-    const col_a = a_ent.get(Collider)!;
+    const draw_a = game.draw[a]!;
+    const col_a = game.colliders[a]!;
 
-    col_a.data.right = false;
-    col_a.data.left = false;
-    col_a.data.top = false;
-    col_a.data.bottom = false;
+    col_a.right = false;
+    col_a.left = false;
+    col_a.top = false;
+    col_a.bottom = false;
 
-    for (let b_ent of entites) {
-      if (a_ent === b_ent) continue;
+    for (let b in game.entities) {
+      if (a === b) continue;
+      if ((game.entities[b] & QUERY) !== QUERY) continue;
+      console.log(a, b);
 
-      const pos_b = b_ent.get(Position);
-      const col_b = b_ent.get(Collider)!;
+      const draw_b = game.draw[b]!;
+      const col_b = game.colliders[b]!;
 
-      if (!pos_b) continue;
-
-      const a: CollidableEntity = { pos: pos_a, col: col_a };
-      const b: CollidableEntity = { pos: pos_b, col: col_b };
-
-      if (collide_l(a, b)) a.col.data.left = true;
-      if (collide_t(a, b)) a.col.data.top = true;
-      if (collide_b(a, b)) a.col.data.bottom = true;
-      if (collide_r(a, b)) a.col.data.right = true;
+      const aa = {
+        draw: draw_a,
+        col: col_a,
+      };
+      const bb = {
+        draw: draw_b,
+        col: col_b,
+      };
+      if (collide_l(aa, bb)) aa.col.left = true;
+      if (collide_t(aa, bb)) aa.col.top = true;
+      if (collide_b(aa, bb)) aa.col.bottom = true;
+      if (collide_r(aa, bb)) aa.col.right = true;
     }
   }
 };
