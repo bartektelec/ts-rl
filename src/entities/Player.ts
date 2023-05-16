@@ -4,10 +4,10 @@ import { Label } from '../components/Label';
 import { Move } from '../components/Move';
 import { PlayerControl } from '../components/PlayerControl';
 
-export const Player = [
+export const Player = (x: number, y: number) => [
   Label('player'),
   Move(),
-  Draw(20, 20, '@', 'white'),
+  Draw(x, y, '@', 'white'),
   Collide(20, 20),
   PlayerControl(),
 ];

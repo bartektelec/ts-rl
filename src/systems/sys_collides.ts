@@ -1,33 +1,53 @@
 import { Has } from '../components';
-import type { Collide } from '../components/Collide';
-import { Draw } from '../components/Draw';
 import { Game } from '../core/Game';
 
-type CollidableEntity = {
-  draw: Draw;
-  col: Collide;
+const calculate_aabb = ({
+  x,
+  y,
+  vx,
+  vy,
+  w,
+  h,
+}: {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  w: number;
+  h: number;
+}) => ({
+  min: {
+    x: x + vx,
+    y: y + vy,
+  },
+  max: {
+    x: x + w + vx,
+    y: y + h + vy,
+  },
+});
+
+const intersect_aabb = (
+  a: ReturnType<typeof calculate_aabb>,
+  b: ReturnType<typeof calculate_aabb>
+): boolean => {
+  const result =
+    a.min.x < b.max.x &&
+    a.max.x > b.min.x &&
+    a.min.y < b.max.y &&
+    a.max.y > b.min.y;
+
+  return result;
 };
-const collide_width = (a: CollidableEntity, b: CollidableEntity) =>
-  a.draw.x + a.col.width >= b.draw.x && a.draw.x <= b.draw.x + b.col.width;
-
-const collide_height = (a: CollidableEntity, b: CollidableEntity) =>
-  a.draw.y + a.col.height >= b.draw.y && a.draw.y <= b.draw.y + b.col.height;
-const collide_l = (a: CollidableEntity, b: CollidableEntity) =>
-  a.draw.x === b.draw.x + b.col.width && collide_height(a, b);
-const collide_r = (a: CollidableEntity, b: CollidableEntity) =>
-  a.draw.x + a.col.width === b.draw.x && collide_height(a, b);
-const collide_t = (a: CollidableEntity, b: CollidableEntity) =>
-  a.draw.y === b.draw.y + b.col.height && collide_width(a, b);
-
-const collide_b = (a: CollidableEntity, b: CollidableEntity) =>
-  a.draw.y + a.col.height === b.draw.y && collide_width(a, b);
 
 const QUERY = Has.Collide | Has.Draw;
 
+const MOVABLE_QUERY = QUERY | Has.Move;
+
 export const sys_collides = (game: Game, _dt: number) => {
   for (let a in game.entities) {
-    if ((game.entities[a] & QUERY) !== QUERY) continue;
+    if ((game.entities[a] & MOVABLE_QUERY) !== MOVABLE_QUERY) continue;
 
+    const move_a = game.movers[a]!;
     const draw_a = game.draw[a]!;
     const col_a = game.colliders[a]!;
 
@@ -36,26 +56,37 @@ export const sys_collides = (game: Game, _dt: number) => {
     col_a.top = false;
     col_a.bottom = false;
 
+    const moved_a = calculate_aabb({
+      x: draw_a.x,
+      y: draw_a.y,
+      vx: move_a?.vx ?? 0,
+      vy: move_a?.vy ?? 0,
+      w: col_a.width,
+      h: col_a.height,
+    });
+
     for (let b in game.entities) {
       if (a === b) continue;
       if ((game.entities[b] & QUERY) !== QUERY) continue;
-      console.log(a, b);
 
       const draw_b = game.draw[b]!;
       const col_b = game.colliders[b]!;
 
-      const aa = {
-        draw: draw_a,
-        col: col_a,
-      };
-      const bb = {
-        draw: draw_b,
-        col: col_b,
-      };
-      if (collide_l(aa, bb)) aa.col.left = true;
-      if (collide_t(aa, bb)) aa.col.top = true;
-      if (collide_b(aa, bb)) aa.col.bottom = true;
-      if (collide_r(aa, bb)) aa.col.right = true;
+      const moved_b = calculate_aabb({
+        x: draw_b.x,
+        y: draw_b.y,
+        vx: 0,
+        vy: 0,
+        w: col_b.width,
+        h: col_b.height,
+      });
+
+      const collides = intersect_aabb(moved_a, moved_b);
+
+      if (collides) {
+        move_a.vy = 0;
+        move_a.vx = 0;
+      }
     }
   }
 };

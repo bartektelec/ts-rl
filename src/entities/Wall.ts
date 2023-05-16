@@ -1,4 +1,7 @@
 import { Collide } from '../components/Collide';
 import { Draw } from '../components/Draw';
 
-export const Wall = [Draw(300, 300, 'X'), Collide(20, 20)];
+export const Wall = (x: number, y: number) => [
+  Draw(x, y, 'X'),
+  Collide(20, 20),
+];

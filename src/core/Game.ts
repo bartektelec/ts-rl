@@ -1,8 +1,10 @@
 import { Collide } from '../components/Collide';
 import { Draw } from '../components/Draw';
 import { Move } from '../components/Move';
+import { Enemy } from '../entities/Enemy';
 import { Player } from '../entities/Player';
 import { Wall } from '../entities/Wall';
+import { sys_ai } from '../systems/sys_ai';
 import { sys_collides } from '../systems/sys_collides';
 import { sys_draw } from '../systems/sys_draw';
 import { sys_framerate } from '../systems/sys_framerate';
@@ -10,9 +12,30 @@ import { sys_keyboard_move } from '../systems/sys_keyboard_move';
 import { sys_move } from '../systems/sys_move';
 import { Config } from './Config';
 import { Entity } from './Entity';
+import { world } from './World';
 
 const MAX_ENTITIES = 10000;
 // const MAX_CHILDREN = 1000;
+
+const read_world = (w: string[]) => {
+  return w
+    .map((row, row_idx) =>
+      row
+        .split('')
+        .map((cell, col_idx) => {
+          const x = col_idx * 20;
+          const y = row_idx * 20;
+
+          if (cell === 'P') return Player(x, y);
+          if (cell === 'E') return Enemy(x, y);
+          if (cell === '-') return Wall(x, y);
+
+          return null;
+        })
+        .filter((x) => Boolean(x))
+    )
+    .flat();
+};
 
 export class Game {
   config: Config;
@@ -49,7 +72,7 @@ export class Game {
 
     this.ctx = this.canvas.getContext('2d')!;
 
-    const blueprints = [Player, Wall];
+    const blueprints = read_world(world);
 
     blueprints.forEach((x) => this.add(x));
 
@@ -80,8 +103,11 @@ export class Game {
   }
 
   update(dt: number) {
-    sys_collides(this, dt);
+    sys_ai(this, dt);
     sys_keyboard_move(this, dt);
+    console.time('start');
+    sys_collides(this, dt);
+    console.timeEnd('start');
     sys_move(this, dt);
     // sys_control_ui(this, dt);
     // sys_control_mouse(this, dt);
